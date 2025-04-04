@@ -1,0 +1,58 @@
+# Unity generated files
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+UserSettings/
+
+# Rider
+.idea/
+*.sln
+*.csproj
+
+# Visual Studio / MonoDevelop
+.vscode/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# OS generated
+.DS_Store
+*.swp
+*.lock
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Unity Asset Store tools
+Assets/AssetStoreTools*
+
+# Auto-generated JetBrains Rider plugin
+Assets/Plugins/Editor/JetBrains*
+
+# Crash/Debug Logs
+sysinfo.txt
+
+# Builds (optional — remove if you want to track built players)
+*.apk
+*.aab
+*.app
+*.exe
+*.ipa
+
+# Unity Cloud Build
+.uabconfig
+
+# Plastic SCM
+.plastic/
+ignore.conf

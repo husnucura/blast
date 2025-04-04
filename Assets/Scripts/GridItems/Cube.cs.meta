@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c79987025a0fd1148a3dc0696863ce2d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - RedPrefab: {instanceID: 0}
+  - BluePrefab: {instanceID: 0}
+  - GreenPrefab: {instanceID: 0}
+  - YellowPrefab: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

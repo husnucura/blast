@@ -1,7 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
+using Random = UnityEngine.Random;
 
 public class AnimationController : MonoBehaviour
 {
@@ -30,7 +33,7 @@ public class AnimationController : MonoBehaviour
         Debug.Log("Destroyed: " + gridItems.Count);
         var animations = new List<IEnumerator>();
         foreach (var item in gridItems)
-            animations.Add(DestroyAnimation(item));
+            animations.Add(DestructionSequence(item));
         EnqueueAnimationGroup(animations);
     }
     private void HandeNewRocket(NewRocketData data)
@@ -45,7 +48,7 @@ public class AnimationController : MonoBehaviour
         // Animate the rocket appearing after the others combine
 
         EnqueueAnimationGroup(animations);
-        EnqueueAnimationGroup(new List<IEnumerator>{SpawnRocketAnimation(data.Rocket)});
+        EnqueueAnimationGroup(new List<IEnumerator> { SpawnRocketAnimation(data.Rocket) });
     }
 
     private IEnumerator MoveToCenterAndDestroy(GridItem item, Vector2Int targetGridPos, float duration = 0.2f)
@@ -151,6 +154,73 @@ public class AnimationController : MonoBehaviour
         }
         obj.transform.localScale = Vector3.zero;
         Destroy(obj);
+    }
+    private IEnumerator DestructionSequence(GridItem item)
+    {
+        CreateParticles(item);
+        Destroy(item.gameObject);
+        return null;
+    }
+
+    private void CreateParticles(GridItem item, float explosionForce = 5f, float fadeDuration = 2.5f)
+    {
+        Sprite[] particleSprites = GetParticleSprites(item);
+        int target = 10;
+        while (target > 0)
+        {
+            foreach (Sprite particleSprite in particleSprites)
+            {
+                target--;
+                GameObject particle = new GameObject("Particle");
+                particle.transform.position = item.gameObject.transform.position;
+                particle.transform.localScale = particle.transform.localScale * 0.3f;
+                SpriteRenderer sr = particle.AddComponent<SpriteRenderer>();
+                sr.sprite = particleSprite;
+                Vector2 dir = Random.insideUnitCircle.normalized;
+                float force = Random.Range(explosionForce * 0.8f, explosionForce * 1.2f);
+                StartCoroutine(MoveParticle(particle.transform, dir * force, fadeDuration));
+            }
+        }
+    }
+
+    private Sprite[] GetParticleSprites(GridItem item)
+    {
+        Sprite[] res = item.gameObject.GetComponent<GridItemComponent>().Sprites;
+        if (item.IsCube())
+        {
+            res = res.Skip(2).Take(1).ToArray();
+        }
+        else if (item.IsObstacle())
+        {
+            if (item is VaseObstacle)
+            {
+                res = res.Skip(2).Take(3).ToArray();
+            }
+            else
+            {
+                res = res.Skip(1).Take(3).ToArray();
+            }
+
+        }
+        return res;
+    }
+
+    private IEnumerator MoveParticle(Transform particle, Vector2 direction, float fadeDuration)
+    {
+        float elapsed = 0f;
+        Color startColor = particle.GetComponent<SpriteRenderer>().color;
+
+        while (elapsed < fadeDuration)
+        {
+            particle.position += (Vector3)direction * Time.deltaTime;
+            particle.GetComponent<SpriteRenderer>().color =
+                Color.Lerp(startColor, Color.clear, elapsed / fadeDuration);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        Destroy(particle.gameObject);
     }
 
     private IEnumerator FallAnimation(GridItem item, int dY)

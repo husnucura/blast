@@ -100,3 +100,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2038edc0e4513fe4ea9f458298e9acdb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Sprites:
+  - {fileID: 1184650260280522132, guid: 15302747f07df9a4caeaa60610ef483e, type: 3}
+  - {fileID: 8611318781296695245, guid: 0dcfe0aa7c1dafa46a23e5cd19ac1e50, type: 3}
+  - {fileID: -4731576832940087401, guid: ca2e8427c8bd735479831e1546123021, type: 3}

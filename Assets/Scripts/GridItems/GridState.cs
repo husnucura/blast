@@ -5,11 +5,50 @@ using UnityEngine;
 public class GridState
 {
     private GridItem[,] grid;
+    public int vaseTarget = 0;
+    public int boxTarget = 0;
+    public int stoneTarget = 0;
 
     public GridState(int level)
     {
-        grid = GridItemFactory.Instance.CreateGrid(LevelLoader.LoadLevel(level));
+        grid = GridItemFactory.Instance.CreateGrid(LevelManager.LoadLevel(level));
+
+        // Initialize counts for vase, box, and stone targets
+        InitializeTargetCounts();
     }
+
+    public  bool IsLevelFinished()
+    {
+        return vaseTarget == 0 && boxTarget == 0 && stoneTarget == 0;
+    }
+    private void InitializeTargetCounts()
+    {
+        for (int x = 0; x < grid.GetLength(0); x++)
+        {
+            for (int y = 0; y < grid.GetLength(1); y++)
+            {
+                GridItem item = grid[x, y];
+
+                if (item.IsObstacle())
+                {
+
+                    if (item is VaseObstacle)
+                    {
+                        vaseTarget++;
+                    }
+                    else if (item is BoxObstacle)
+                    {
+                        boxTarget++;
+                    }
+                    else if (item is StoneObstacle)
+                    {
+                        stoneTarget++;
+                    }
+                }
+            }
+        }
+    }
+
 
     public GridItem Get(Vector2Int pos)
     {
@@ -109,7 +148,7 @@ public class GridState
 
         return adjacentPositions;
     }
-    
+
     public List<List<GridItem>> FindAllCubeGroups()
     {
         List<List<GridItem>> allCubeGroups = new List<List<GridItem>>();
@@ -122,7 +161,7 @@ public class GridState
                 Vector2Int currentPos = new Vector2Int(x, y);
 
                 // Skip if the position has already been visited or if it's not a cube
-                if (visitedPositions.Contains(currentPos) || Get(currentPos) == null ||!(Get(currentPos).IsCube()))
+                if (visitedPositions.Contains(currentPos) || Get(currentPos) == null || !(Get(currentPos).IsCube()))
                     continue;
 
                 // Perform BFS from the current position and get a group
@@ -147,8 +186,8 @@ public class GridState
 
     public List<Vector2Int> GetArea(Vector2Int pos)
     {
-          Vector2Int[] directions = new Vector2Int[]
-        {
+        Vector2Int[] directions = new Vector2Int[]
+      {
             new Vector2Int(0, 1),
             new Vector2Int(0, -1),
             new Vector2Int(-1, 0),
@@ -156,8 +195,8 @@ public class GridState
             new Vector2Int(1, 1),
             new Vector2Int(1, -1),
             new Vector2Int(-1,1),
-            new Vector2Int(-1, -1) 
-        };
+            new Vector2Int(-1, -1)
+      };
 
         List<Vector2Int> adjacentPositions = new List<Vector2Int>();
 

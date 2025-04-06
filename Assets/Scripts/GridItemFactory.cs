@@ -33,6 +33,10 @@ public class GridItemFactory : MonoBehaviour
 
     public Transform gridParentTransform;
 
+    public GameObject Smoke;
+    public GameObject Star;
+
+
     public GridItem[,] CreateGrid(LevelData levelData)
     {
         int gridWidth = levelData.grid_width;
@@ -91,10 +95,10 @@ public class GridItemFactory : MonoBehaviour
 
     public GridItem CreateGridItemGameObject(ItemType itemType, int x, int y)
     {
-         if(itemType == ItemType.Random)
-            itemType =(ItemType)random.Next(0, 4);
+        if (itemType == ItemType.Random)
+            itemType = (ItemType)random.Next(0, 4);
         GameObject prefab = GetPrefab(itemType);
-        if(prefab == null)
+        if (prefab == null)
             Debug.Log("prefab null aga");
         GameObject instance = Instantiate(prefab, GridPositionCalculator.Instance.GetWorldPosition(x, y), Quaternion.identity, gridParentTransform);
         GridItem logicItem = CreateLogicItem(instance, itemType, x, y);
@@ -103,24 +107,68 @@ public class GridItemFactory : MonoBehaviour
     }
     public GridItem CreateRandomRocket(int x, int y)
     {
-        bool hor =(Random.Range(0, 2) == 0) ? true : false;
-        return hor?CreateGridItemGameObject(ItemType.HorizontalRocket,x,y):CreateGridItemGameObject(ItemType.VerticalRocket,x,y);
+        bool hor = (Random.Range(0, 2) == 0) ? true : false;
+        return hor ? CreateGridItemGameObject(ItemType.HorizontalRocket, x, y) : CreateGridItemGameObject(ItemType.VerticalRocket, x, y);
     }
-    public GameObject CreateSplitRocket(Vector2Int pos,Vector2Int direction){
-        ItemType itemType = direction == Vector2Int.left || direction == Vector2Int.right 
-                ? ItemType.HorizontalRocket 
+    public GameObject CreateSplitRocket(Vector2Int pos, Vector2Int direction)
+    {
+        ItemType itemType = direction == Vector2Int.left || direction == Vector2Int.right
+                ? ItemType.HorizontalRocket
                 : ItemType.VerticalRocket;
-        GameObject gameObject = CreateGridItemGameObject(itemType,pos.x,pos.y).gameObject;
-        if(direction == Vector2Int.left || direction == Vector2Int.down){
+        GameObject gameObject = CreateGridItemGameObject(itemType, pos.x, pos.y).gameObject;
+        if (direction == Vector2Int.left || direction == Vector2Int.down)
+        {
             gameObject.GetComponent<SpriteRenderer>().sprite = gameObject.GetComponent<GridItemComponent>().Sprites[1];
         }
-        else{
+        else
+        {
             gameObject.GetComponent<SpriteRenderer>().sprite = gameObject.GetComponent<GridItemComponent>().Sprites[2];
         }
         return gameObject;
 
-        
+
 
     }
+    public GameObject CreateSmokeOrStar(Vector3 position, float smokeProb)
+    {
+        // Randomly decide whether to create smoke or star based on the percentage probability
+        if (Random.Range(0f, 1f) <= smokeProb)
+        {
+            return CreateSmokeObject(position);
+        }
+        else
+        {
+            return CreateStar(position);
+        }
+    }
+
+    public GameObject CreateSmokeObject(Vector3 position)
+    {
+        GameObject smokeEffect = Instantiate(Smoke);
+
+        float randomXOffset = Random.Range(-0.2f, 0.2f) * GridPositionCalculator.squareWidth;
+        float randomYOffset = Random.Range(-0.2f, 0.2f);
+
+        smokeEffect.transform.position = new Vector3(position.x + randomXOffset, position.y + randomYOffset, position.z);
+
+        smokeEffect.transform.localScale = new Vector3(0.5f, 0.5f, 1f);
+
+        return smokeEffect;
+    }
+    public GameObject CreateStar(Vector3 position)
+    {
+        GameObject smokeEffect = Instantiate(Star);
+
+        float randomXOffset = Random.Range(-0.4f, 0.4f) * GridPositionCalculator.squareWidth;
+        float randomYOffset = Random.Range(-0.4f, 0.4f) * GridPositionCalculator.squareWidth;
+
+        smokeEffect.transform.position = new Vector3(position.x + randomXOffset, position.y + randomYOffset, position.z);
+
+        smokeEffect.transform.localScale = new Vector3(0.1f, 0.1f, 1f);
+
+        return smokeEffect;
+    }
+
+
 }
 

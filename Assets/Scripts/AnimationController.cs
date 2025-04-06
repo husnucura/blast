@@ -41,7 +41,7 @@ public class AnimationController : MonoBehaviour
         };
         var rocketAnimations = PlayAnimationsInParallel(RocketAnimations(combo.rocketBlastDatas));
         animations.Add(rocketAnimations);
-        EnqueueAnimationGroup(new List<IEnumerator>{PlayAnimationsInSequence(animations)});
+        EnqueueAnimationGroup(new List<IEnumerator> { PlayAnimationsInSequence(animations) });
     }
     private IEnumerator RocketComboSetupAnimation(RocketBlastCombo combo)
     {
@@ -50,9 +50,10 @@ public class AnimationController : MonoBehaviour
         List<GridItem> gridItems = new List<GridItem>();
         foreach (var item in combo.GridItems)
         {
-            if(item is Rocket)
+            if (item is Rocket)
                 centerAnimations.Add(MoveToCenterAndDestroy(item, combo.center));
-            else{
+            else
+            {
                 gridItems.Add(item);
 
             }
@@ -107,6 +108,8 @@ public class AnimationController : MonoBehaviour
             }
             while (t < duration)
             {
+
+                AnimateSmokeEffect(7, new Vector3(rocket.transform.position.x, rocket.transform.position.y, -80), squareMove, 0.5f);
                 rocket.transform.position = Vector3.Lerp(startPos, endPos, t / duration);
                 t += Time.deltaTime;
                 yield return null;
@@ -128,6 +131,39 @@ public class AnimationController : MonoBehaviour
         Destroy(rocket);
         RocketHandler.DecrementRockets();
     }
+
+    private void AnimateSmokeEffect(int num, Vector3 startPos, Vector3 direction, float duration)
+    {
+        while (num-- > 0)
+            StartCoroutine(AnimateSmokeEffect(startPos, direction, duration));
+
+    }
+    private IEnumerator AnimateSmokeEffect(Vector3 startPos, Vector3 direction, float duration)
+    {
+        GameObject smokeEffect = GridItemFactory.Instance.CreateSmokeOrStar(startPos, 0.7f);
+        float elapsedTime = 0f;
+        float fadeDuration = duration * 0.5f;
+        Color startColor = smokeEffect.GetComponent<SpriteRenderer>().color;
+        Color targetColor = new Color(startColor.r, startColor.g, startColor.b, 0f); // Transparent color for fading out
+        Vector2 randomDir = Random.insideUnitCircle.normalized;
+        Vector3 moveDirection = new Vector3(randomDir.x, randomDir.y, 0f);
+        while (elapsedTime < duration)
+        {
+            smokeEffect.transform.position += moveDirection * Time.deltaTime * GridPositionCalculator.squareWidth;
+
+            if (elapsedTime > fadeDuration)
+            {
+                smokeEffect.GetComponent<SpriteRenderer>().color = Color.Lerp(startColor, targetColor, (elapsedTime - fadeDuration) / fadeDuration);
+            }
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        Destroy(smokeEffect);
+    }
+
+
+
     private IEnumerator PlayRocketItemInteractionAnimation(AnimationType type, GridItem item)
     {
         switch (type)
@@ -295,32 +331,44 @@ public class AnimationController : MonoBehaviour
     private List<IEnumerator> DestructionSequence(List<GridItem> items)
     {
         List<IEnumerator> animations = new List<IEnumerator>();
-        foreach(GridItem gridItem in items){
+        foreach (GridItem gridItem in items)
+        {
             animations.Add(DestructionSequence(gridItem));
         }
         return animations;
     }
 
-    private void CreateParticles(GridItem item, float explosionForce = 5f, float fadeDuration = 2.5f)
+    private void CreateParticles(GridItem item, float explosionForce = 5f, float fadeDuration = 1.0f)
     {
         Sprite[] particleSprites = GetParticleSprites(item);
-        int target = 10;
+        int target = 7;
+
+        Vector3 startPos = item.gameObject.transform.position;
+
         while (target > 0)
         {
             foreach (Sprite particleSprite in particleSprites)
             {
-                target--;
+                if (target-- <= 0) break;
+
                 GameObject particle = new GameObject("Particle");
-                particle.transform.position = item.gameObject.transform.position;
-                particle.transform.localScale = particle.transform.localScale * 0.3f;
+                particle.transform.position = startPos;
+                particle.transform.localScale = Vector3.one * 0.3f;
+
                 SpriteRenderer sr = particle.AddComponent<SpriteRenderer>();
                 sr.sprite = particleSprite;
-                Vector2 dir = Random.insideUnitCircle.normalized;
+
+                float angle = Random.Range(0f, 180f);
+                float rad = angle * Mathf.Deg2Rad;
+                Vector2 dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)).normalized;
+
                 float force = Random.Range(explosionForce * 0.8f, explosionForce * 1.2f);
+
                 StartCoroutine(MoveParticle(particle.transform, dir * force, fadeDuration));
             }
         }
     }
+
 
     private Sprite[] GetParticleSprites(GridItem item)
     {
@@ -347,20 +395,33 @@ public class AnimationController : MonoBehaviour
     private IEnumerator MoveParticle(Transform particle, Vector2 direction, float fadeDuration)
     {
         float elapsed = 0f;
-        Color startColor = particle.GetComponent<SpriteRenderer>().color;
+        SpriteRenderer sr = particle.GetComponent<SpriteRenderer>();
+        Color startColor = sr.color;
+
+        Vector2 velocity = direction;
+
+        float gravity = -9.8f;
+
+        Vector3 position = particle.position;
 
         while (elapsed < fadeDuration)
         {
-            particle.position += (Vector3)direction * Time.deltaTime;
-            particle.GetComponent<SpriteRenderer>().color =
-                Color.Lerp(startColor, Color.clear, elapsed / fadeDuration);
+            float deltaTime = Time.deltaTime;
 
-            elapsed += Time.deltaTime;
+            velocity.y += gravity * deltaTime;
+
+            position += (Vector3)(velocity * deltaTime);
+            particle.position = position;
+
+            sr.color = Color.Lerp(startColor, Color.clear, elapsed / fadeDuration);
+
+            elapsed += deltaTime;
             yield return null;
         }
 
         Destroy(particle.gameObject);
     }
+
 
     private IEnumerator FallAnimation(int delay, GridItem item, int dY)
     {

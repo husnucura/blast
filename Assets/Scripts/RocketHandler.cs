@@ -137,7 +137,7 @@ public static class RocketHandler
                 if (target.IsObstacle())
                 {
                     Obstacle obs = target as Obstacle;
-                    bool destroyed = obs.DealDamage(1, DamageSource.Rocket);
+                    bool destroyed = obs.DealDamage(1, DamageSource.Rocket,gridState);
 
                     animType = destroyed ? AnimationType.Destruction : AnimationType.Damage;
                     if (destroyed)

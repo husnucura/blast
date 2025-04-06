@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class GridManager : MonoBehaviour
@@ -17,7 +18,7 @@ public class GridManager : MonoBehaviour
         GridEvents.OnGridCellClicked += HandleGridCellClicked;
         GridEvents.OnRocketBlastChainStarted += (pos) => RocketHandler.HandleSingleRocket(gridState, pos);
         GridEvents.OnRocketLineClear += (() => { HandleFallingObjects(); HandleNewObjects(); });
-        GridEvents.OnGridUpdateAnimationFinished += ()=>SetAnimationsPlaying(false);
+        GridEvents.OnGridUpdateAnimationFinished += HanleGridUpdateAnimationFinished;
 
     }
     private void OnDisable()
@@ -25,7 +26,7 @@ public class GridManager : MonoBehaviour
         GridEvents.OnGridCellClicked -= HandleGridCellClicked;
         GridEvents.OnRocketBlastChainStarted -= (pos) => RocketHandler.HandleSingleRocket(gridState, pos);
         GridEvents.OnRocketLineClear -= (() => { HandleFallingObjects(); HandleNewObjects(); });
-        GridEvents.OnGridUpdateAnimationFinished -= ()=>SetAnimationsPlaying(false);
+        GridEvents.OnGridUpdateAnimationFinished -= HanleGridUpdateAnimationFinished;
 
     }
     public void SetAnimationsPlaying(bool isPlaying)
@@ -69,14 +70,10 @@ public class GridManager : MonoBehaviour
             Debug.Log("There are gridsate changing animations");
             return;
         }
-        Debug.Log("Azd1");
         if (gridState.Get(gridPos) == null) return;
-        Debug.Log("Azd2");
         GridItem item = gridState.Get(gridPos);
         if (item.IsCube())
         {
-            Debug.Log("Azd3");
-
             handleCubeBlast(gridPos);
         }
         else if (item.IsSpecialItem() && (item as SpecialItem).IsRocket())
@@ -84,7 +81,6 @@ public class GridManager : MonoBehaviour
             RocketHandler.HandleSingleRocket(gridState, gridPos,true);
         }
 
-        //CheckLevelWin();
     }
     private void HandleObstacleDamages(List<GridItem> explodedCubes)
     {
@@ -100,7 +96,7 @@ public class GridManager : MonoBehaviour
                 if (gridState.Get(pos).IsObstacle() && !affectedPositions.Contains(pos))
                 {
                     Obstacle obstacle = gridState.Get(pos) as Obstacle;
-                    bool destroyed = obstacle.DealDamage(1, DamageSource.Blast);
+                    bool destroyed = obstacle.DealDamage(1, DamageSource.Blast,gridState);
                     Debug.Log(pos);
                     if (destroyed)
                     {
@@ -258,41 +254,6 @@ public class GridManager : MonoBehaviour
         GridEvents.TriggerItemsFall(new List<FallData>(fallDatas));
     }
 
-    private void AssertGridConsistency()
-    {
-        System.Text.StringBuilder gridOutput = new System.Text.StringBuilder();
-
-        // Loop through all positions in the grid
-        for (int y = gridState.Height - 1; y >= 0; y--)
-        {
-            for (int x = 0; x < gridState.Width; x++)
-            {
-                // If the grid at this position is not null
-                if (gridState.Get(x, y) != null)
-                {
-                    // Check if the position of the grid item matches the current x, y indices
-                    Vector2Int gridPosition = gridState.Get(x, y).GridPosition;
-                    if (gridPosition.x != x || gridPosition.y != y)
-                    {
-                        gridOutput.AppendLine($"Mismatch detected at GridPosition ({x}, {y}). " +
-                            $"Expected GridPosition: ({x}, {y}), but got: ({gridPosition.x}, {gridPosition.y})");
-                    }
-                    else
-                    {
-                        gridOutput.Append($"[{gridState.Get(x, y).ItemType}] ");  // You can change `ItemType` to whatever field represents the item
-                    }
-                }
-                else
-                {
-                    gridOutput.Append("[NULL] ");
-                }
-            }
-            gridOutput.AppendLine(); // Start a new line for the next row
-        }
-
-        // Log the grid with detailed information
-        Debug.Log(gridOutput.ToString());
-    }
     private void ShowRocketHint()
     {
         List<List<GridItem>> groups = gridState.FindAllCubeGroups();
@@ -306,12 +267,22 @@ public class GridManager : MonoBehaviour
         }
 
     }
-
-
-
-    private void CheckLevelWin()
+    public void HanleGridUpdateAnimationFinished()
     {
+        if (!CheckLevelWin()) 
+        {
+            SetAnimationsPlaying(false);
+        }
+    }
 
+
+
+    private bool CheckLevelWin()
+    {
+        if(gridState.IsLevelFinished()){
+                return true;
+        }
+        return false;
     }
 
     private void ShowWinParticles()

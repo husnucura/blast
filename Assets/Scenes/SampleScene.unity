@@ -250,7 +250,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -100}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -369,7 +369,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1a957bb4f71bee46b6c1b6c0db5cebb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  level: 3
+  level: 0
 --- !u!4 &678552922
 Transform:
   m_ObjectHideFlags: 0
@@ -771,6 +771,8 @@ MonoBehaviour:
   horizontalRocketPrefab: {fileID: 4339302206877058080, guid: e58e16ec97300be47a6a4a6bd4e230a4, type: 3}
   verticalRocketPrefab: {fileID: 7712233718825861451, guid: 01f7a034adf2b074fa001f1de0a30155, type: 3}
   gridParentTransform: {fileID: 678552922}
+  Smoke: {fileID: 2969811150022447070, guid: fd82ff0656850c346af55777bff5b695, type: 3}
+  Star: {fileID: 4845412110915856835, guid: 8e38079dbe8d5124a9b1fb99aaf9c0a2, type: 3}
 --- !u!4 &1530548328
 Transform:
   m_ObjectHideFlags: 0

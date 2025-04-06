@@ -9,7 +9,7 @@ public abstract class Obstacle : GridItem
     protected int health =1;
 
     public override bool IsObstacle() => true;
-    public virtual bool DealDamage(int  damage,DamageSource damageSource)
+    public virtual bool DealDamage(int  damage,DamageSource damageSource,GridState gridState)
     {
         health -=damage;
         return health <=0;

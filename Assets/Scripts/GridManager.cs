@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
     public int level;
     public static GridManager Instance { get; private set; }
+    private int AnimationsArePlaying = 0;
 
     private GridState gridState;
     private int[,] fallDistance;
@@ -13,12 +15,27 @@ public class GridManager : MonoBehaviour
     private void OnEnable()
     {
         GridEvents.OnGridCellClicked += HandleGridCellClicked;
-        GridEvents.OnRocketBlastChainStarted += (pos) => RocketHandler.HandleSingleRocket(gridState,pos);
-        GridEvents.OnRocketLineClear += () => {  HandleFallingObjects(); HandleNewObjects();};}
+        GridEvents.OnRocketBlastChainStarted += (pos) => RocketHandler.HandleSingleRocket(gridState, pos);
+        GridEvents.OnRocketLineClear += (() => { HandleFallingObjects(); HandleNewObjects(); });
+        GridEvents.OnGridUpdateAnimationFinished += ()=>SetAnimationsPlaying(false);
 
+    }
     private void OnDisable()
     {
         GridEvents.OnGridCellClicked -= HandleGridCellClicked;
+        GridEvents.OnRocketBlastChainStarted -= (pos) => RocketHandler.HandleSingleRocket(gridState, pos);
+        GridEvents.OnRocketLineClear -= (() => { HandleFallingObjects(); HandleNewObjects(); });
+        GridEvents.OnGridUpdateAnimationFinished -= ()=>SetAnimationsPlaying(false);
+
+    }
+    public void SetAnimationsPlaying(bool isPlaying)
+    {
+        int value = isPlaying ? 1 : 0;
+        Interlocked.Exchange(ref AnimationsArePlaying, value);
+    }
+    public bool AreAnimationsPlaying()
+    {
+        return Interlocked.CompareExchange(ref AnimationsArePlaying, 0, 0) == 1;
     }
 
     private void Awake()
@@ -47,6 +64,11 @@ public class GridManager : MonoBehaviour
 
     private void HandleGridCellClicked(Vector2Int gridPos)
     {
+        if (AreAnimationsPlaying())
+        {
+            Debug.Log("There are gridsate changing animations");
+            return;
+        }
         Debug.Log("Azd1");
         if (gridState.Get(gridPos) == null) return;
         Debug.Log("Azd2");
@@ -59,17 +81,11 @@ public class GridManager : MonoBehaviour
         }
         else if (item.IsSpecialItem() && (item as SpecialItem).IsRocket())
         {
-            RocketHandler.HandleSingleRocket(gridState,gridPos);
+            RocketHandler.HandleSingleRocket(gridState, gridPos,true);
         }
 
         //CheckLevelWin();
     }
-
-    private void handleRocket(Vector2Int gridPos)
-    {
-        return;
-    }
-
     private void HandleObstacleDamages(List<GridItem> explodedCubes)
     {
         HashSet<Vector2Int> affectedPositions = new HashSet<Vector2Int>();
@@ -92,7 +108,8 @@ public class GridManager : MonoBehaviour
 
                         gridState.Set(pos, null);
                     }
-                    else{
+                    else
+                    {
                         StartCoroutine(obstacle.DealDamageAnimation());
                     }
                     affectedPositions.Add(pos);
@@ -109,7 +126,7 @@ public class GridManager : MonoBehaviour
 
         if (cubes.Count < 2)
             return;
-
+        SetAnimationsPlaying(true);
         foreach (Cube cube in cubes)
         {
             var cubepos = cube.GridPosition;
@@ -120,7 +137,7 @@ public class GridManager : MonoBehaviour
         {
             GridItem rocket = CreateRocket(gridPos);
             rocket.gameObject.SetActive(false);
-            GridEvents.TriggerNewRocketCreated(new NewRocketData(new List<GridItem>(cubes),gridPos,rocket));
+            GridEvents.TriggerNewRocketCreated(new NewRocketData(new List<GridItem>(cubes), gridPos, rocket));
         }
         else
         {
@@ -149,26 +166,26 @@ public class GridManager : MonoBehaviour
 
                 }
                 else
-                {   
-                    int delay =0;
+                {
+                    int delay = 0;
                     while (curNullCount > 0)
                     {
                         var newObject = GridItemFactory.Instance.CreateGridItemGameObject(ItemType.Random, x, y);
                         gridState.Set(x, y - curNullCount, newObject);
-                        newItemDatas.Add(new NewItemData(newObject, curNullCount, new Vector2Int(x, y),delay++));
+                        newItemDatas.Add(new NewItemData(newObject, curNullCount, new Vector2Int(x, y), delay++));
                         curNullCount--;
                     }
 
 
                 }
             }
-            int delay2 =0;
+            int delay2 = 0;
             while (curNullCount > 0)
             {
                 var newObject = GridItemFactory.Instance.CreateGridItemGameObject(ItemType.Random, x, gridState.Height);
                 newObject.gameObject.SetActive(false);
                 gridState.Set(x, gridState.Height - curNullCount, newObject);
-                newItemDatas.Add(new NewItemData(newObject, curNullCount, new Vector2Int(x, gridState.Height),delay2++));
+                newItemDatas.Add(new NewItemData(newObject, curNullCount, new Vector2Int(x, gridState.Height), delay2++));
 
                 curNullCount--;
             }
@@ -177,7 +194,7 @@ public class GridManager : MonoBehaviour
         GridEvents.TriggerNewItemsCreated(newItemDatas);
     }
 
-    
+
 
 
     private GridItem CreateRocket(Vector2Int position)
@@ -276,11 +293,14 @@ public class GridManager : MonoBehaviour
         // Log the grid with detailed information
         Debug.Log(gridOutput.ToString());
     }
-    private void ShowRocketHint(){
+    private void ShowRocketHint()
+    {
         List<List<GridItem>> groups = gridState.FindAllCubeGroups();
-        foreach(List<GridItem> gridItems in groups){
-            bool should = gridItems.Count >=4;
-            foreach(GridItem gridItem in gridItems){
+        foreach (List<GridItem> gridItems in groups)
+        {
+            bool should = gridItems.Count >= 4;
+            foreach (GridItem gridItem in gridItems)
+            {
                 (gridItem as Cube).ShowHint(should);
             }
         }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -108,6 +109,7 @@ public class GridState
 
         return adjacentPositions;
     }
+    
     public List<List<GridItem>> FindAllCubeGroups()
     {
         List<List<GridItem>> allCubeGroups = new List<List<GridItem>>();
@@ -143,5 +145,30 @@ public class GridState
     }
 
 
+    public List<Vector2Int> GetArea(Vector2Int pos)
+    {
+          Vector2Int[] directions = new Vector2Int[]
+        {
+            new Vector2Int(0, 1),
+            new Vector2Int(0, -1),
+            new Vector2Int(-1, 0),
+            new Vector2Int(1, 0),
+            new Vector2Int(1, 1),
+            new Vector2Int(1, -1),
+            new Vector2Int(-1,1),
+            new Vector2Int(-1, -1) 
+        };
+
+        List<Vector2Int> adjacentPositions = new List<Vector2Int>();
+
+        foreach (Vector2Int direction in directions)
+        {
+            Vector2Int neighborPos = pos + direction;
+            if (IsValid(neighborPos))
+                adjacentPositions.Add(neighborPos);
+        }
+
+        return adjacentPositions;
+    }
 }
 

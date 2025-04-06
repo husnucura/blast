@@ -6,37 +6,41 @@ public class VaseObstacle : Obstacle
     public VaseObstacle(GameObject gameObject, int x, int y) : base(gameObject, ItemType.Vase, x, y)
     {
         health = 2;
-        // Initialize any specific properties or behaviors for the vase obstacle
     }
 
     public override IEnumerator DealDamageAnimation()
     {
-        SpriteRenderer spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
-        GridItemComponent gridItemComponent = gameObject.GetComponent<GridItemComponent>();
-
-        // Fade out the current sprite
-        float fadeDuration = 0.2f;
-        Color currentColor = spriteRenderer.color;
-        currentColor.a = 0;
-        float t = 0f;
-
-        while (t < fadeDuration)
-        {
-            t += Time.deltaTime;
-            spriteRenderer.color = new Color(currentColor.r, currentColor.g, currentColor.b, Mathf.Lerp(0, 1, t / fadeDuration));
+        if (gameObject == null)
             yield return null;
-        }
-
-        spriteRenderer.sprite = gridItemComponent.Sprites[1];
-
-        // Fade in the new sprite
-        t = 0f;
-        currentColor.a = 0;
-        while (t < fadeDuration)
+        else
         {
-            t += Time.deltaTime;
-            spriteRenderer.color = new Color(currentColor.r, currentColor.g, currentColor.b, Mathf.Lerp(0, 1, t / fadeDuration));
-            yield return null;
+            SpriteRenderer spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
+            GridItemComponent gridItemComponent = gameObject.GetComponent<GridItemComponent>();
+
+            // Fade out the current sprite
+            float fadeDuration = 0.2f;
+            Color currentColor = spriteRenderer.color;
+            currentColor.a = 0;
+            float t = 0f;
+
+            while (t < fadeDuration)
+            {
+                t += Time.deltaTime;
+                spriteRenderer.color = new Color(currentColor.r, currentColor.g, currentColor.b, Mathf.Lerp(0, 1, t / fadeDuration));
+                yield return null;
+            }
+
+            spriteRenderer.sprite = gridItemComponent.Sprites[1];
+
+            // Fade in the new sprite
+            t = 0f;
+            currentColor.a = 0;
+            while (t < fadeDuration)
+            {
+                t += Time.deltaTime;
+                spriteRenderer.color = new Color(currentColor.r, currentColor.g, currentColor.b, Mathf.Lerp(0, 1, t / fadeDuration));
+                yield return null;
+            }
         }
     }
 

@@ -15,18 +15,28 @@ public static class GridEvents
     public static event Action<List<FallData>> OnItemsFall;
     public static event Action<List<NewItemData>> OnNewItemsCreated;
     public static event Action<NewRocketData> OnNewRocketCreated;
-    public static event Action<RocketBlastData> OnRocketBlastStarted;
+    public static event Action<List<RocketBlastData>> OnRocketBlastStarted;
 
     public static event Action<Vector2Int> OnRocketBlastChainStarted;
 
     public static event Action OnRocketLineClear;
+    public static event Action OnGridUpdateAnimationFinished;
+
+    public static event Action<RocketBlastCombo> OnRocketBlastCombo;
+    public static void TriggerRocketBlastCombo(RocketBlastCombo rocketBlastCombo){
+        OnRocketBlastCombo?.Invoke(rocketBlastCombo);
+        
+    }
+    public static void TriggerGridUpdateAnimationFinished(){
+        OnGridUpdateAnimationFinished?.Invoke();
+    }
     public static void TriggerRocketLineClear(){
         OnRocketLineClear?.Invoke();
     }
 
 
 
-    public static void TriggerRocketBlastStarted(RocketBlastData rocketBlastData){
+    public static void TriggerRocketBlastStarted(List<RocketBlastData> rocketBlastData){
         OnRocketBlastStarted?.Invoke(rocketBlastData);
     }
     public static void TriggerRocketBlastChainStarted(Vector2Int pos){
@@ -116,3 +126,18 @@ public struct RocketBlastData
         this.itemQueue =gridItems;
     }
 }
+public struct RocketBlastCombo
+{
+    public Vector2Int center;
+    public List<GridItem> GridItems;
+    public List<RocketBlastData> rocketBlastDatas;
+
+    // Constructor
+    public RocketBlastCombo(Vector2Int center, List<GridItem> gridItems, List<RocketBlastData> rocketBlastDatas)
+    {
+        this.center = center;
+        this.GridItems = gridItems;
+        this.rocketBlastDatas = rocketBlastDatas;
+    }
+}
+

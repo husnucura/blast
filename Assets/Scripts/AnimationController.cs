@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Android.Gradle.Manifest;
+using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Random = UnityEngine.Random;
@@ -17,9 +19,9 @@ public class AnimationController : MonoBehaviour
         GridEvents.OnItemsFall += HandleItemsFall;
         GridEvents.OnNewItemsCreated += HandleNewItems;
         GridEvents.OnNewRocketCreated += HandleNewRocket;
-        GridEvents.OnRocketBlastStarted += HandleSingleRocketBlastStarted;
+        GridEvents.OnRocketBlastStarted += HandlePairRocketBlastStarted;
+        GridEvents.OnRocketBlastCombo += HandleRocketBlastCombo;
     }
-
 
 
     private void OnDisable()
@@ -28,16 +30,59 @@ public class AnimationController : MonoBehaviour
         GridEvents.OnItemsFall -= HandleItemsFall;
         GridEvents.OnNewItemsCreated -= HandleNewItems;
         GridEvents.OnNewRocketCreated -= HandleNewRocket;
-        GridEvents.OnRocketBlastStarted -= HandleSingleRocketBlastStarted;
+        GridEvents.OnRocketBlastStarted -= HandlePairRocketBlastStarted;
+        GridEvents.OnRocketBlastCombo -= HandleRocketBlastCombo;
     }
-    private void HandleSingleRocketBlastStarted(RocketBlastData data)
+    private void HandleRocketBlastCombo(RocketBlastCombo combo)
     {
-        StartCoroutine(RocketBlastSequence(data));
+        List<IEnumerator> animations = new List<IEnumerator>
+        {
+            RocketComboSetupAnimation(combo)
+        };
+        var rocketAnimations = PlayAnimationsInParallel(RocketAnimations(combo.rocketBlastDatas));
+        animations.Add(rocketAnimations);
+        EnqueueAnimationGroup(new List<IEnumerator>{PlayAnimationsInSequence(animations)});
+    }
+    private IEnumerator RocketComboSetupAnimation(RocketBlastCombo combo)
+    {
+        var centerAnimations = new List<IEnumerator>();
+        var animations = new List<IEnumerator>();
+        List<GridItem> gridItems = new List<GridItem>();
+        foreach (var item in combo.GridItems)
+        {
+            if(item is Rocket)
+                centerAnimations.Add(MoveToCenterAndDestroy(item, combo.center));
+            else{
+                gridItems.Add(item);
+
+            }
+        }
+        animations.Add(PlayAnimationsInParallel(centerAnimations));
+        var destructionAnimations = new List<IEnumerator>();
+        animations.Add(PlayAnimationsInParallel(DestructionSequence(gridItems)));
+        return PlayAnimationsInSequence(animations);
+
     }
 
-    private IEnumerator RocketBlastSequence(RocketBlastData data)
+    private void HandlePairRocketBlastStarted(List<RocketBlastData> datas)
     {
-        Destroy(data.originalRocket.gameObject);
+        StartCoroutine(PlayAnimationsInParallel(RocketAnimations(datas)));
+    }
+    private List<IEnumerator> RocketAnimations(List<RocketBlastData> datas)
+    {
+        List<IEnumerator> animations = new List<IEnumerator>();
+        foreach (RocketBlastData data in datas)
+        {
+            animations.Add(HandleSingleRocket(data));
+        }
+        return animations;
+    }
+
+
+    private IEnumerator HandleSingleRocket(RocketBlastData data)
+    {
+        if (data.originalRocket != null)
+            Destroy(data.originalRocket.gameObject);
         GameObject rocket = GridItemFactory.Instance.CreateSplitRocket(data.startPos, data.direction);
         rocket.SetActive(true);
         Vector3 squareMove = new Vector3(data.direction.x, data.direction.y, 0f) * GridPositionCalculator.squareWidth;
@@ -46,8 +91,8 @@ public class AnimationController : MonoBehaviour
         Queue<AnimationType> animationQueue = data.animationQueue;
         Queue<GridItem> itemQueue = data.itemQueue;
 
-        float duration = 0.1f;
-        float t =0f;
+        float duration = 0.05f;
+        float t = 0f;
         Vector3 endPos;
         while (animationQueue.Count > 0)
         {
@@ -75,19 +120,13 @@ public class AnimationController : MonoBehaviour
         t = 0f;
         endPos = rocket.transform.position + squareMove;
         while (t < duration)
-            {
-                rocket.transform.position = Vector3.Lerp(startPos, endPos, t / duration);
-                t += Time.deltaTime;
-                yield return null;
-            }
-            if(data.direction == Vector2Int.left || data.direction == Vector2Int.right){
-
-                RocketHandler.DecrementRocketCount(RocketHandler.currentRocketsAtRowY,data.startPos.y);
-            }
-            else{
-                RocketHandler.DecrementRocketCount(RocketHandler.currentRocketsAtColumnX,data.startPos.x);
-            }
-            Destroy(rocket);
+        {
+            rocket.transform.position = Vector3.Lerp(startPos, endPos, t / duration);
+            t += Time.deltaTime;
+            yield return null;
+        }
+        Destroy(rocket);
+        RocketHandler.DecrementRockets();
     }
     private IEnumerator PlayRocketItemInteractionAnimation(AnimationType type, GridItem item)
     {
@@ -133,7 +172,6 @@ public class AnimationController : MonoBehaviour
             animations.Add(MoveToCenterAndDestroy(item, data.GridPos));
         }
 
-        // Animate the rocket appearing after the others combine
 
         EnqueueAnimationGroup(animations);
         EnqueueAnimationGroup(new List<IEnumerator> { SpawnRocketAnimation(data.Rocket) });
@@ -162,7 +200,6 @@ public class AnimationController : MonoBehaviour
         GameObject obj = rocket.gameObject;
         obj.transform.localScale = Vector3.zero;
         obj.SetActive(true);
-
         float t = 0f;
         while (t < duration)
         {
@@ -178,21 +215,27 @@ public class AnimationController : MonoBehaviour
     private void HandleItemsFall(List<FallData> fallingItems)
     {
         var animations = new List<IEnumerator>();
-        
+
         foreach (var data in fallingItems)
-            animations.Add(FallAnimation(0,data.GridItem, data.FallDistance));
+            animations.Add(FallAnimation(0, data.GridItem, data.FallDistance));
         EnqueueAnimationGroup(animations);
     }
 
     private void HandleNewItems(List<NewItemData> newItems)
     {
         var animations = new List<IEnumerator>();
-        int delay = 0; 
+        int delay = 0;
         foreach (var data in newItems)
         {
-            animations.Add(FallAnimation(delay,data.GridItem, data.FallDistance));
+            animations.Add(FallAnimation(delay, data.GridItem, data.FallDistance));
         }
         EnqueueAnimationGroup(animations);
+        EnqueueAnimationGroup(new List<IEnumerator> { GridUpdatefinished() });
+    }
+    private IEnumerator GridUpdatefinished()
+    {
+        GridEvents.TriggerGridUpdateAnimationFinished();
+        yield return null;
     }
 
     private void EnqueueAnimationGroup(List<IEnumerator> animations)
@@ -229,32 +272,33 @@ public class AnimationController : MonoBehaviour
             yield return coroutine;
         }
     }
+    private IEnumerator PlayAnimationsInSequence(List<IEnumerator> animations)
+    {
+        foreach (var anim in animations)
+        {
+            yield return StartCoroutine(anim);
+        }
+    }
     private IEnumerator DamageAnimation(Obstacle item)
     {
-        yield return StartCoroutine(item.DealDamageAnimation());
-        
-    }
+        if (item != null && item.gameObject != null)
+            yield return StartCoroutine(item.DealDamageAnimation());
+        yield return null;
 
-    private IEnumerator DestroyAnimation(GridItem item, float duration = 0.3f)
-    {
-        Debug.Log("Destroy anim");
-        GameObject obj = item.gameObject;
-        Vector3 start = obj.transform.localScale;
-        float t = 0f;
-        while (t < duration)
-        {
-            obj.transform.localScale = Vector3.Lerp(start, Vector3.zero, t / duration);
-            t += Time.deltaTime;
-            yield return null;
-        }
-        obj.transform.localScale = Vector3.zero;
-        Destroy(obj);
     }
     private IEnumerator DestructionSequence(GridItem item)
     {
         CreateParticles(item);
         Destroy(item.gameObject);
         yield return null;
+    }
+    private List<IEnumerator> DestructionSequence(List<GridItem> items)
+    {
+        List<IEnumerator> animations = new List<IEnumerator>();
+        foreach(GridItem gridItem in items){
+            animations.Add(DestructionSequence(gridItem));
+        }
+        return animations;
     }
 
     private void CreateParticles(GridItem item, float explosionForce = 5f, float fadeDuration = 2.5f)
@@ -318,7 +362,7 @@ public class AnimationController : MonoBehaviour
         Destroy(particle.gameObject);
     }
 
-    private IEnumerator FallAnimation(int delay,GridItem item, int dY)
+    private IEnumerator FallAnimation(int delay, GridItem item, int dY)
     {
         item.gameObject.SetActive(true);
 
@@ -328,11 +372,12 @@ public class AnimationController : MonoBehaviour
         Vector3 start = obj.transform.position;
         Vector2Int startPos = GridPositionCalculator.Instance.GetGridPosition(start);
         Vector3 end = GridPositionCalculator.Instance.GetWorldPosition(startPos.x, startPos.y - dY);
-        float unitDuration =0.05f;
+        float unitDuration = 0.05f;
         float duration = unitDuration * dY;
-        float delayt =0;
+        float delayt = 0;
         float delayDuration = unitDuration * delay;
-        while(delayt<delayDuration){
+        while (delayt < delayDuration)
+        {
             delayt += Time.deltaTime;
             yield return null;
         }

@@ -42,6 +42,7 @@ public class GridManager : MonoBehaviour
     {
         gridState = new GridState(levelNumber);
         fallDistance = new int[gridState.Width, gridState.Height];
+        ShowRocketHint();
     }
 
     private void HandleGridCellClicked(Vector2Int gridPos)
@@ -76,7 +77,7 @@ public class GridManager : MonoBehaviour
         List<GridItem> items = new List<GridItem>();
         foreach (var cube in explodedCubes)
         {
-            foreach (var pos in GetAdjacentPositions(cube.GridPosition))
+            foreach (var pos in gridState.GetAdjacentPositions(cube.GridPosition))
             {
                 if (gridState.Get(pos) == null) continue;
 
@@ -91,6 +92,9 @@ public class GridManager : MonoBehaviour
 
                         gridState.Set(pos, null);
                     }
+                    else{
+                        StartCoroutine(obstacle.DealDamageAnimation());
+                    }
                     affectedPositions.Add(pos);
                 }
             }
@@ -101,7 +105,7 @@ public class GridManager : MonoBehaviour
 
     private void handleCubeBlast(Vector2Int gridPos)
     {
-        List<GridItem> cubes = PerformBFS(gridPos);
+        List<GridItem> cubes = gridState.PerformBFS(gridPos);
 
         if (cubes.Count < 2)
             return;
@@ -169,69 +173,11 @@ public class GridManager : MonoBehaviour
                 curNullCount--;
             }
         }
+        ShowRocketHint();
         GridEvents.TriggerNewItemsCreated(newItemDatas);
     }
 
-
-    private List<GridItem> PerformBFS(Vector2Int startPosition)
-    {
-        List<GridItem> cubes = new List<GridItem>();
-        Queue<Vector2Int> positionsToCheck = new Queue<Vector2Int>();
-        HashSet<Vector2Int> visitedPositions = new HashSet<Vector2Int>();
-
-        positionsToCheck.Enqueue(startPosition);
-        visitedPositions.Add(startPosition);
-
-        CubeColor targetItemType = (gridState.Get(startPosition) as Cube).CubeColor;
-
-        while (positionsToCheck.Count > 0)
-        {
-            Vector2Int currentPos = positionsToCheck.Dequeue();
-            GridItem currentItemComponent = gridState.Get(currentPos);
-
-            Cube currentCube = currentItemComponent as Cube;
-
-
-            cubes.Add(currentCube);
-
-
-            foreach (Vector2Int neighborPos in GetAdjacentPositions(currentPos))
-            {
-                if (!(gridState.Get(neighborPos) != null && gridState.Get(neighborPos).IsCube()))
-                    continue;
-                Cube nextCube = gridState.Get(neighborPos) as Cube;
-                if (nextCube != null && !visitedPositions.Contains(neighborPos) && nextCube.CubeColor == targetItemType)
-                {
-                    visitedPositions.Add(neighborPos);
-                    positionsToCheck.Enqueue(neighborPos);
-                }
-            }
-        }
-        return cubes;
-    }
-
-    private List<Vector2Int> GetAdjacentPositions(Vector2Int pos)
-    {
-        Vector2Int[] directions = new Vector2Int[]
-        {
-            new Vector2Int(0, 1),   // Up
-            new Vector2Int(0, -1),  // Down
-            new Vector2Int(-1, 0),  // Left
-            new Vector2Int(1, 0)    // Right
-        };
-
-        List<Vector2Int> adjacentPositions = new List<Vector2Int>();
-
-        foreach (Vector2Int direction in directions)
-        {
-            Vector2Int neighborPos = pos + direction;
-            if (gridState.IsValid(neighborPos))
-                adjacentPositions.Add(neighborPos);
-        }
-
-        return adjacentPositions;
-    }
-
+    
 
 
     private GridItem CreateRocket(Vector2Int position)
@@ -329,6 +275,16 @@ public class GridManager : MonoBehaviour
 
         // Log the grid with detailed information
         Debug.Log(gridOutput.ToString());
+    }
+    private void ShowRocketHint(){
+        List<List<GridItem>> groups = gridState.FindAllCubeGroups();
+        foreach(List<GridItem> gridItems in groups){
+            bool should = gridItems.Count >=4;
+            foreach(GridItem gridItem in gridItems){
+                (gridItem as Cube).ShowHint(should);
+            }
+        }
+
     }
 
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -56,5 +57,15 @@ public class Cube : GridItem
     public override void Blast()
     {
         Debug.Log($"Cube at {GridPosition} blasted!");
+    }
+
+    public void ShowHint(bool should)
+    {
+
+    if(should) gameObject.GetComponent<SpriteRenderer>().sprite = gameObject.GetComponent<GridItemComponent>().Sprites[1];
+    else{
+        gameObject.GetComponent<SpriteRenderer>().sprite = gameObject.GetComponent<GridItemComponent>().Sprites[0];
+    }
+
     }
 }

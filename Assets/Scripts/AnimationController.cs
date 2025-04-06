@@ -99,6 +99,7 @@ public class AnimationController : MonoBehaviour
                 break;
 
             case AnimationType.Damage:
+                StartCoroutine(DamageAnimation(item as Obstacle));
                 break;
 
             case AnimationType.AnotherRocket:
@@ -227,6 +228,11 @@ public class AnimationController : MonoBehaviour
         {
             yield return coroutine;
         }
+    }
+    private IEnumerator DamageAnimation(Obstacle item)
+    {
+        yield return StartCoroutine(item.DealDamageAnimation());
+        
     }
 
     private IEnumerator DestroyAnimation(GridItem item, float duration = 0.3f)

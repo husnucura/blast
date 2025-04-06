@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public abstract class Obstacle : GridItem
@@ -12,6 +13,9 @@ public abstract class Obstacle : GridItem
     {
         health -=damage;
         return health <=0;
+    }
+    public virtual IEnumerator DealDamageAnimation(){
+        yield return null;
     }
 
 }

@@ -106,5 +106,21 @@ public class GridItemFactory : MonoBehaviour
         bool hor =(Random.Range(0, 2) == 0) ? true : false;
         return hor?CreateGridItemGameObject(ItemType.HorizontalRocket,x,y):CreateGridItemGameObject(ItemType.VerticalRocket,x,y);
     }
+    public GameObject CreateSplitRocket(Vector2Int pos,Vector2Int direction){
+        ItemType itemType = direction == Vector2Int.left || direction == Vector2Int.right 
+                ? ItemType.HorizontalRocket 
+                : ItemType.VerticalRocket;
+        GameObject gameObject = CreateGridItemGameObject(itemType,pos.x,pos.y).gameObject;
+        if(direction == Vector2Int.left || direction == Vector2Int.down){
+            gameObject.GetComponent<SpriteRenderer>().sprite = gameObject.GetComponent<GridItemComponent>().Sprites[1];
+        }
+        else{
+            gameObject.GetComponent<SpriteRenderer>().sprite = gameObject.GetComponent<GridItemComponent>().Sprites[2];
+        }
+        return gameObject;
+
+        
+
+    }
 }
 

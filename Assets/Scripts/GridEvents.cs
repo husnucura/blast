@@ -15,8 +15,23 @@ public static class GridEvents
     public static event Action<List<FallData>> OnItemsFall;
     public static event Action<List<NewItemData>> OnNewItemsCreated;
     public static event Action<NewRocketData> OnNewRocketCreated;
+    public static event Action<RocketBlastData> OnRocketBlastStarted;
+
+    public static event Action<Vector2Int> OnRocketBlastChainStarted;
+
+    public static event Action OnRocketLineClear;
+    public static void TriggerRocketLineClear(){
+        OnRocketLineClear?.Invoke();
+    }
 
 
+
+    public static void TriggerRocketBlastStarted(RocketBlastData rocketBlastData){
+        OnRocketBlastStarted?.Invoke(rocketBlastData);
+    }
+    public static void TriggerRocketBlastChainStarted(Vector2Int pos){
+        OnRocketBlastChainStarted?.Invoke(pos);
+    }
     public static void TriggerGridCellClicked(Vector2Int gridPos)
     {
         OnGridCellClicked?.Invoke(gridPos);
@@ -52,6 +67,7 @@ public struct FallData
     public GridItem GridItem;
     public int FallDistance;
     
+    
     public FallData(GridItem gridItem, int fallDistance)
     {
         GridItem = gridItem;
@@ -64,12 +80,14 @@ public struct NewItemData
     public GridItem GridItem;
     public int FallDistance;
     public Vector2Int SpawnPosition;
+    public int Delay;
 
-    public NewItemData(GridItem gridItem, int fallDistance, Vector2Int spawnPosition)
+    public NewItemData(GridItem gridItem, int fallDistance, Vector2Int spawnPosition,int delay)
     {
         GridItem = gridItem;
         FallDistance = fallDistance;
         SpawnPosition = spawnPosition;
+        Delay = delay;
     }
 }
 public struct NewRocketData
@@ -81,5 +99,20 @@ public struct NewRocketData
         GridItems = gridItems;
         GridPos = gridPos;
         Rocket = rocket;
+    }
+}
+public struct RocketBlastData
+{
+    public GridItem originalRocket;
+    public Queue<AnimationType> animationQueue;
+    public Queue<GridItem> itemQueue;
+    public Vector2Int startPos, direction;
+    public RocketBlastData(GridItem originalRocket,Vector2Int startPos, Vector2Int direction,Queue<AnimationType> animationQueue,Queue<GridItem> gridItems)
+    {
+        this.originalRocket = originalRocket;
+        this.startPos = startPos;
+        this.direction = direction;
+        this.animationQueue = animationQueue;
+        this.itemQueue =gridItems;
     }
 }

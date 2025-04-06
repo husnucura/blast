@@ -13,7 +13,8 @@ public class GridManager : MonoBehaviour
     private void OnEnable()
     {
         GridEvents.OnGridCellClicked += HandleGridCellClicked;
-    }
+        GridEvents.OnRocketBlastChainStarted += (pos) => RocketHandler.HandleSingleRocket(gridState,pos);
+        GridEvents.OnRocketLineClear += () => {  HandleFallingObjects(); HandleNewObjects();};}
 
     private void OnDisable()
     {
@@ -57,7 +58,7 @@ public class GridManager : MonoBehaviour
         }
         else if (item.IsSpecialItem() && (item as SpecialItem).IsRocket())
         {
-            handleRocket(gridPos);
+            RocketHandler.HandleSingleRocket(gridState,gridPos);
         }
 
         //CheckLevelWin();
@@ -144,24 +145,26 @@ public class GridManager : MonoBehaviour
 
                 }
                 else
-                {
+                {   
+                    int delay =0;
                     while (curNullCount > 0)
                     {
                         var newObject = GridItemFactory.Instance.CreateGridItemGameObject(ItemType.Random, x, y);
                         gridState.Set(x, y - curNullCount, newObject);
-                        newItemDatas.Add(new NewItemData(newObject, curNullCount, new Vector2Int(x, y)));
+                        newItemDatas.Add(new NewItemData(newObject, curNullCount, new Vector2Int(x, y),delay++));
                         curNullCount--;
                     }
 
 
                 }
             }
+            int delay2 =0;
             while (curNullCount > 0)
             {
                 var newObject = GridItemFactory.Instance.CreateGridItemGameObject(ItemType.Random, x, gridState.Height);
                 newObject.gameObject.SetActive(false);
                 gridState.Set(x, gridState.Height - curNullCount, newObject);
-                newItemDatas.Add(new NewItemData(newObject, curNullCount, new Vector2Int(x, gridState.Height)));
+                newItemDatas.Add(new NewItemData(newObject, curNullCount, new Vector2Int(x, gridState.Height),delay2++));
 
                 curNullCount--;
             }

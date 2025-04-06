@@ -16,8 +16,10 @@ public class AnimationController : MonoBehaviour
         GridEvents.OnItemsDestroyed += HandleItemsDestroyed;
         GridEvents.OnItemsFall += HandleItemsFall;
         GridEvents.OnNewItemsCreated += HandleNewItems;
-        GridEvents.OnNewRocketCreated += HandeNewRocket;
+        GridEvents.OnNewRocketCreated += HandleNewRocket;
+        GridEvents.OnRocketBlastStarted += HandleSingleRocketBlastStarted;
     }
+
 
 
     private void OnDisable()
@@ -25,8 +27,93 @@ public class AnimationController : MonoBehaviour
         GridEvents.OnItemsDestroyed -= HandleItemsDestroyed;
         GridEvents.OnItemsFall -= HandleItemsFall;
         GridEvents.OnNewItemsCreated -= HandleNewItems;
-        GridEvents.OnNewRocketCreated -= HandeNewRocket;
+        GridEvents.OnNewRocketCreated -= HandleNewRocket;
+        GridEvents.OnRocketBlastStarted -= HandleSingleRocketBlastStarted;
     }
+    private void HandleSingleRocketBlastStarted(RocketBlastData data)
+    {
+        StartCoroutine(RocketBlastSequence(data));
+    }
+
+    private IEnumerator RocketBlastSequence(RocketBlastData data)
+    {
+        Destroy(data.originalRocket.gameObject);
+        GameObject rocket = GridItemFactory.Instance.CreateSplitRocket(data.startPos, data.direction);
+        rocket.SetActive(true);
+        Vector3 squareMove = new Vector3(data.direction.x, data.direction.y, 0f) * GridPositionCalculator.squareWidth;
+        Vector3 startPos = rocket.transform.position;
+
+        Queue<AnimationType> animationQueue = data.animationQueue;
+        Queue<GridItem> itemQueue = data.itemQueue;
+
+        float duration = 0.1f;
+        float t =0f;
+        Vector3 endPos;
+        while (animationQueue.Count > 0)
+        {
+            t = 0f;
+            endPos = rocket.transform.position + squareMove;
+            AnimationType anim = animationQueue.Dequeue();
+            GridItem item = itemQueue.Dequeue();
+
+            if (item != null)
+            {
+                StartCoroutine(PlayRocketItemInteractionAnimation(anim, item));
+            }
+            while (t < duration)
+            {
+                rocket.transform.position = Vector3.Lerp(startPos, endPos, t / duration);
+                t += Time.deltaTime;
+                yield return null;
+            }
+
+            rocket.transform.position = endPos;
+            startPos = endPos;
+
+
+        }
+        t = 0f;
+        endPos = rocket.transform.position + squareMove;
+        while (t < duration)
+            {
+                rocket.transform.position = Vector3.Lerp(startPos, endPos, t / duration);
+                t += Time.deltaTime;
+                yield return null;
+            }
+            if(data.direction == Vector2Int.left || data.direction == Vector2Int.right){
+
+                RocketHandler.DecrementRocketCount(RocketHandler.currentRocketsAtRowY,data.startPos.y);
+            }
+            else{
+                RocketHandler.DecrementRocketCount(RocketHandler.currentRocketsAtColumnX,data.startPos.x);
+            }
+            Destroy(rocket);
+    }
+    private IEnumerator PlayRocketItemInteractionAnimation(AnimationType type, GridItem item)
+    {
+        switch (type)
+        {
+            case AnimationType.Destruction:
+                CreateParticles(item);
+                Destroy(item.gameObject);
+                break;
+
+            case AnimationType.Damage:
+                break;
+
+            case AnimationType.AnotherRocket:
+                GridEvents.TriggerRocketBlastChainStarted(item.GridPosition);
+                break;
+
+            case AnimationType.Null:
+            default:
+                break;
+        }
+
+        yield return null;
+    }
+
+
 
     private void HandleItemsDestroyed(List<GridItem> gridItems)
     {
@@ -36,7 +123,7 @@ public class AnimationController : MonoBehaviour
             animations.Add(DestructionSequence(item));
         EnqueueAnimationGroup(animations);
     }
-    private void HandeNewRocket(NewRocketData data)
+    private void HandleNewRocket(NewRocketData data)
     {
         var animations = new List<IEnumerator>();
 
@@ -90,17 +177,19 @@ public class AnimationController : MonoBehaviour
     private void HandleItemsFall(List<FallData> fallingItems)
     {
         var animations = new List<IEnumerator>();
+        
         foreach (var data in fallingItems)
-            animations.Add(FallAnimation(data.GridItem, data.FallDistance));
+            animations.Add(FallAnimation(0,data.GridItem, data.FallDistance));
         EnqueueAnimationGroup(animations);
     }
 
     private void HandleNewItems(List<NewItemData> newItems)
     {
         var animations = new List<IEnumerator>();
+        int delay = 0; 
         foreach (var data in newItems)
         {
-            animations.Add(FallAnimation(data.GridItem, data.FallDistance));
+            animations.Add(FallAnimation(delay,data.GridItem, data.FallDistance));
         }
         EnqueueAnimationGroup(animations);
     }
@@ -159,7 +248,7 @@ public class AnimationController : MonoBehaviour
     {
         CreateParticles(item);
         Destroy(item.gameObject);
-        return null;
+        yield return null;
     }
 
     private void CreateParticles(GridItem item, float explosionForce = 5f, float fadeDuration = 2.5f)
@@ -223,7 +312,7 @@ public class AnimationController : MonoBehaviour
         Destroy(particle.gameObject);
     }
 
-    private IEnumerator FallAnimation(GridItem item, int dY)
+    private IEnumerator FallAnimation(int delay,GridItem item, int dY)
     {
         item.gameObject.SetActive(true);
 
@@ -233,8 +322,14 @@ public class AnimationController : MonoBehaviour
         Vector3 start = obj.transform.position;
         Vector2Int startPos = GridPositionCalculator.Instance.GetGridPosition(start);
         Vector3 end = GridPositionCalculator.Instance.GetWorldPosition(startPos.x, startPos.y - dY);
-
-        float duration = 0.1f * dY;
+        float unitDuration =0.05f;
+        float duration = unitDuration * dY;
+        float delayt =0;
+        float delayDuration = unitDuration * delay;
+        while(delayt<delayDuration){
+            delayt += Time.deltaTime;
+            yield return null;
+        }
         float t = 0f;
         while (t < duration)
         {

@@ -1,7 +1,7 @@
 using UnityEngine;
 public class GridPositionCalculator:MonoBehaviour
 {
-    private const float squareWidth = 1.4f;
+    public const float squareWidth = 1.4f;
     private const float sizePadding = 0.4f;
     private float xOffset;
     private float yOffset;

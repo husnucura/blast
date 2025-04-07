@@ -8,12 +8,14 @@ public class GridState
     public int vaseTarget = 0;
     public int boxTarget = 0;
     public int stoneTarget = 0;
+    public int RemainingMove = 0;
 
     public GridState(int level)
     {
-        grid = GridItemFactory.Instance.CreateGrid(LevelManager.LoadLevel(level));
-
-        // Initialize counts for vase, box, and stone targets
+        LevelData levelData = LevelManager.LoadLevel(level);
+        grid = GridItemFactory.Instance.CreateGrid(levelData);
+        RemainingMove = levelData.move_count;
+        SetRemainingmoves(levelData.move_count);
         InitializeTargetCounts();
     }
 
@@ -47,6 +49,15 @@ public class GridState
                 }
             }
         }
+        SetScoreVisuals();
+    }
+    public void SetScoreVisuals(){
+        ScoreGroupVisualController.Instance.SetScore(ScoreGroupVisualController.ScoreItem.Box,boxTarget);
+        ScoreGroupVisualController.Instance.SetScore(ScoreGroupVisualController.ScoreItem.Vase,vaseTarget);
+        ScoreGroupVisualController.Instance.SetScore(ScoreGroupVisualController.ScoreItem.Stone,stoneTarget);
+    }
+    public void SetRemainingmoves(int move){
+        ScoreGroupVisualController.Instance.SetRemainingmoves(move);
     }
 
 

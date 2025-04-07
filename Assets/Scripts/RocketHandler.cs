@@ -61,6 +61,9 @@ public static class RocketHandler
                 itemsToAnimate.Add(item);
 
                 gridState.Set(pos, null);
+                if(item.IsObstacle()){
+                    (item as Obstacle).DealDamage(10,DamageSource.RocketCombo,gridState);
+                }
             }
         }
         List<RocketBlastData> rocketBlastDatas = new List<RocketBlastData>();

@@ -16,24 +16,24 @@ public class Cube : GridItem
     public Cube(GameObject gameObject, ItemType itemType, int x, int y) : base(gameObject, itemType, x, y)
     {
         switch (itemType)
-    {
-        case ItemType.Red:
-            CubeColor = CubeColor.Red;
-            break;
-        case ItemType.Green:
-            CubeColor = CubeColor.Green;
-            break;
-        case ItemType.Blue:
-            CubeColor = CubeColor.Blue;
-            break;
-        case ItemType.Yellow:
-            CubeColor = CubeColor.Yellow;
-            break;
-        default:
-            Debug.Log("This should not be printed");
-            CubeColor = CubeColor.Red; // Or some default color
-            break;
-    }
+        {
+            case ItemType.Red:
+                CubeColor = CubeColor.Red;
+                break;
+            case ItemType.Green:
+                CubeColor = CubeColor.Green;
+                break;
+            case ItemType.Blue:
+                CubeColor = CubeColor.Blue;
+                break;
+            case ItemType.Yellow:
+                CubeColor = CubeColor.Yellow;
+                break;
+            default:
+                Debug.Log("This should not be printed");
+                CubeColor = CubeColor.Red; // Or some default color
+                break;
+        }
     }
 
 
@@ -62,10 +62,11 @@ public class Cube : GridItem
     public void ShowHint(bool should)
     {
 
-    if(should) gameObject.GetComponent<SpriteRenderer>().sprite = gameObject.GetComponent<GridItemComponent>().Sprites[1];
-    else{
-        gameObject.GetComponent<SpriteRenderer>().sprite = gameObject.GetComponent<GridItemComponent>().Sprites[0];
-    }
+        if (should) gameObject.GetComponent<SpriteRenderer>().sprite = gameObject.GetComponent<GridItemComponent>().Sprites[1];
+        else
+        {
+            gameObject.GetComponent<SpriteRenderer>().sprite = gameObject.GetComponent<GridItemComponent>().Sprites[0];
+        }
 
     }
 }

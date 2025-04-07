@@ -23,5 +23,6 @@ public abstract class Obstacle : GridItem
 public enum DamageSource
 {
     Blast,
-    Rocket
+    Rocket,
+    RocketCombo
 }

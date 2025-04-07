@@ -30,8 +30,6 @@ public class LevelManager
     public static int LoadCurrentLevelNumber()
     {
        int curLevel = PlayerPrefs.GetInt(CurrentLevelKey, 1);
-       if(curLevel == 1)
-        SaveCurrentLevelNumber(1);
         return curLevel;
     }
 

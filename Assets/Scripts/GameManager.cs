@@ -1,6 +1,6 @@
 using UnityEngine;
 public class GameManager : MonoBehaviour {
     private void Start() {
-        GridManager.Instance.LoadLevel(1);
+        GridManager.Instance.LoadLevel(LevelManager.LoadCurrentLevelNumber());
     }
 }

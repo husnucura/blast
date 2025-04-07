@@ -24,7 +24,7 @@ public class GridPositionCalculator:MonoBehaviour
         gridWidth = width;
         gridHeight = height;
         xOffset = squareWidth/2f * (width - 1);
-        yOffset = squareWidth/2f * (height - 1);
+        yOffset = 12.5f;
     }
 
     public Vector2 GetGridSize()

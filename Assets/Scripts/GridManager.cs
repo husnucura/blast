@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
-    public int level;
+    public bool ResetLevel;
     public static GridManager Instance { get; private set; }
     private int AnimationsArePlaying = 0;
 
@@ -18,7 +18,7 @@ public class GridManager : MonoBehaviour
         GridEvents.OnGridCellClicked += HandleGridCellClicked;
         GridEvents.OnRocketBlastChainStarted += (pos) => RocketHandler.HandleSingleRocket(gridState, pos);
         GridEvents.OnRocketLineClear += (() => { HandleFallingObjects(); HandleNewObjects(); });
-        GridEvents.OnGridUpdateAnimationFinished += HanleGridUpdateAnimationFinished;
+        GridEvents.OnGridUpdateAnimationFinished += HandleGridUpdateAnimationFinished;
 
     }
     private void OnDisable()
@@ -26,9 +26,10 @@ public class GridManager : MonoBehaviour
         GridEvents.OnGridCellClicked -= HandleGridCellClicked;
         GridEvents.OnRocketBlastChainStarted -= (pos) => RocketHandler.HandleSingleRocket(gridState, pos);
         GridEvents.OnRocketLineClear -= (() => { HandleFallingObjects(); HandleNewObjects(); });
-        GridEvents.OnGridUpdateAnimationFinished -= HanleGridUpdateAnimationFinished;
+        GridEvents.OnGridUpdateAnimationFinished -= HandleGridUpdateAnimationFinished;
 
     }
+
     public void SetAnimationsPlaying(bool isPlaying)
     {
         int value = isPlaying ? 1 : 0;
@@ -53,7 +54,8 @@ public class GridManager : MonoBehaviour
 
     private void Start()
     {
-        LoadLevel(level);
+        if (ResetLevel) LevelManager.SaveCurrentLevelNumber(1);
+        LoadLevel(LevelManager.LoadCurrentLevelNumber());
     }
 
     public void LoadLevel(int levelNumber)
@@ -67,7 +69,7 @@ public class GridManager : MonoBehaviour
     {
         if (AreAnimationsPlaying())
         {
-            Debug.Log("There are gridsate changing animations");
+            Debug.Log("There are gridsate changing animations" + RocketHandler.CurActiveRockets);
             return;
         }
         if (gridState.Get(gridPos) == null) return;
@@ -78,7 +80,10 @@ public class GridManager : MonoBehaviour
         }
         else if (item.IsSpecialItem() && (item as SpecialItem).IsRocket())
         {
-            RocketHandler.HandleSingleRocket(gridState, gridPos,true);
+            SetAnimationsPlaying(true);
+            gridState.RemainingMove--;
+            gridState.SetRemainingmoves(gridState.RemainingMove);
+            RocketHandler.HandleSingleRocket(gridState, gridPos, true);
         }
 
     }
@@ -96,7 +101,7 @@ public class GridManager : MonoBehaviour
                 if (gridState.Get(pos).IsObstacle() && !affectedPositions.Contains(pos))
                 {
                     Obstacle obstacle = gridState.Get(pos) as Obstacle;
-                    bool destroyed = obstacle.DealDamage(1, DamageSource.Blast,gridState);
+                    bool destroyed = obstacle.DealDamage(1, DamageSource.Blast, gridState);
                     Debug.Log(pos);
                     if (destroyed)
                     {
@@ -123,12 +128,13 @@ public class GridManager : MonoBehaviour
         if (cubes.Count < 2)
             return;
         SetAnimationsPlaying(true);
+        gridState.RemainingMove--;
+        gridState.SetRemainingmoves(gridState.RemainingMove);
         foreach (Cube cube in cubes)
         {
             var cubepos = cube.GridPosition;
             gridState.Set(cubepos, null);
         }
-        Debug.Log("Blaaaaaaasssssstttt " + cubes.Count);
         if (cubes.Count >= 4)
         {
             GridItem rocket = CreateRocket(gridPos);
@@ -186,7 +192,6 @@ public class GridManager : MonoBehaviour
                 curNullCount--;
             }
         }
-        ShowRocketHint();
         GridEvents.TriggerNewItemsCreated(newItemDatas);
     }
 
@@ -267,22 +272,42 @@ public class GridManager : MonoBehaviour
         }
 
     }
-    public void HanleGridUpdateAnimationFinished()
+    public void HandleGridUpdateAnimationFinished()
     {
-        if (!CheckLevelWin()) 
+        ShowRocketHint();
+        gridState.SetScoreVisuals();
+        if (!CheckObstaclesCleared())
         {
-            SetAnimationsPlaying(false);
+            if (gridState.RemainingMove > 0)
+
+            {
+                SetAnimationsPlaying(false);
+            }
+            else
+            {
+                Debug.Log("fail");
+                UiAnimationController.Instance.PlayLossAnimation();
+
+            }
+        }
+        else if (gridState.RemainingMove >= 0)
+        {
+            Debug.Log("win");
+            UiAnimationController.Instance.PlayWinAnimation();
+        }
+        else
+        {
+            Debug.Log("fail");
+            UiAnimationController.Instance.PlayLossAnimation();
+
         }
     }
 
 
 
-    private bool CheckLevelWin()
+    private bool CheckObstaclesCleared()
     {
-        if(gridState.IsLevelFinished()){
-                return true;
-        }
-        return false;
+        return gridState.IsLevelFinished();
     }
 
     private void ShowWinParticles()

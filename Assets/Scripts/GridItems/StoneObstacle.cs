@@ -8,7 +8,7 @@ public class StoneObstacle : Obstacle
     }
     public override bool DealDamage(int damage, DamageSource damageSource,GridState gridState)
     {
-        if (damageSource == DamageSource.Rocket)
+        if (damageSource == DamageSource.Rocket|| damageSource == DamageSource.RocketCombo)
             health -= damage;
         if(health <= 0)
             gridState.stoneTarget--;

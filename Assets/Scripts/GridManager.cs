@@ -69,10 +69,10 @@ public class GridManager : MonoBehaviour
     {
         if (AreAnimationsPlaying())
         {
-            Debug.Log("There are gridsate changing animations" + RocketHandler.CurActiveRockets);
+            Debug.Log("There are gridsate changing animations or game is finished" + RocketHandler.CurActiveRockets);
             return;
         }
-        if (gridState.Get(gridPos) == null) return;
+        if (!gridState.IsValid(gridPos)||gridState.Get(gridPos) == null) return;
         GridItem item = gridState.Get(gridPos);
         if (item.IsCube())
         {

@@ -86,7 +86,6 @@ public static class RocketHandler
             }
         }
         IncrementRockets(rocketCount);
-        //GridEvents.TriggerRocketBlastStarted(rocketBlastDatas);
         GridEvents.TriggerRocketBlastCombo(new RocketBlastCombo(center,itemsToAnimate,rocketBlastDatas));
     }
 
